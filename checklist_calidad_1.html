@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Calidad — Empaque</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0f1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --green: #00e676;
+    --red: #ff1744;
+    --yellow: #ffd600;
+    --blue: #2979ff;
+    --text: #e8f0fe;
+    --text-dim: #7b8fa8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .screen { display: none; min-height: 100vh; padding: 20px; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  /* === START SCREEN === */
+  #startScreen {
+    background: linear-gradient(135deg, #0a0f1a 0%, #0d1b2a 50%, #0a1628 100%);
+    position: relative; overflow: hidden;
+  }
+  #startScreen::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,230,118,0.08) 0%, transparent 70%);
+    top: -100px; right: -100px; border-radius: 50%;
+  }
+  .start-badge {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase;
+    color: var(--green); background: rgba(0,230,118,0.1);
+    border: 1px solid rgba(0,230,118,0.3); padding: 6px 16px; border-radius: 20px; margin-bottom: 24px;
+  }
+  .start-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(42px, 8vw, 72px); font-weight: 900; line-height: 0.95;
+    text-align: center; margin-bottom: 12px; letter-spacing: -1px;
+  }
+  .start-title span { color: var(--green); }
+  .start-sub {
+    font-size: 15px; color: var(--text-dim); text-align: center;
+    margin-bottom: 40px; max-width: 340px; line-height: 1.5;
+  }
+  .setup-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px; width: 100%; max-width: 420px; margin-bottom: 20px;
+  }
+  .setup-card h3 {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 20px;
+  }
+  .field-group { margin-bottom: 16px; }
+  .field-group label {
+    display: block; font-size: 12px; font-weight: 600; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+  }
+  .field-group input, .field-group select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; color: var(--text);
+    font-family: 'Barlow', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s;
+  }
+  .field-group input:focus, .field-group select:focus { border-color: var(--green); }
+  .field-group select option { background: var(--surface2); }
+
+  .checklist-editor { display: flex; flex-direction: column; gap: 8px; }
+  .check-item-row { display: flex; gap: 8px; align-items: center; }
+  .check-item-row input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 12px; color: var(--text); font-size: 13px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .check-item-row input:focus { border-color: var(--green); }
+  .btn-remove {
+    width: 30px; height: 30px; background: rgba(255,23,68,0.15);
+    border: 1px solid rgba(255,23,68,0.3); border-radius: 6px; color: var(--red);
+    cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.2s;
+  }
+  .btn-remove:hover { background: rgba(255,23,68,0.3); }
+  .btn-add-item {
+    background: rgba(0,230,118,0.08); border: 1px dashed rgba(0,230,118,0.3);
+    border-radius: 8px; padding: 8px; color: var(--green); font-size: 12px;
+    font-weight: 600; cursor: pointer; letter-spacing: 1px; transition: all 0.2s; width: 100%; margin-top: 10px;
+  }
+  .btn-add-item:hover { background: rgba(0,230,118,0.15); }
+  .btn-start {
+    width: 100%; max-width: 420px; background: var(--green); border: none;
+    border-radius: 12px; padding: 18px; color: #000;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800;
+    letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 0 30px rgba(0,230,118,0.3);
+  }
+  .btn-start:hover { background: #00ff85; box-shadow: 0 0 50px rgba(0,230,118,0.5); transform: translateY(-1px); }
+  .sheets-status { font-size: 11px; color: var(--text-dim); margin-top: 8px; text-align: center; min-height: 16px; }
+  .sheets-status.ok { color: var(--green); }
+  .sheets-status.err { color: var(--red); }
+
+  /* === RUN SCREEN === */
+  #runScreen { background: var(--bg); justify-content: flex-start; padding: 0; }
+  .run-header {
+    width: 100%; background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  .run-header-left { display: flex; align-items: center; gap: 12px; }
+  .status-dot {
+    width: 10px; height: 10px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(0,230,118,0.4); }
+    50% { opacity:0.8; box-shadow: 0 0 0 6px rgba(0,230,118,0); }
+  }
+  .run-title-text { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+  .run-line-badge { font-size: 11px; color: var(--text-dim); background: var(--surface2); padding: 3px 10px; border-radius: 20px; }
+  .run-header-right { display: flex; align-items: center; gap: 16px; }
+  .clock-display { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; }
+  .btn-end {
+    background: rgba(255,23,68,0.15); border: 1px solid rgba(255,23,68,0.3);
+    border-radius: 8px; padding: 7px 14px; color: var(--red); font-size: 12px;
+    font-weight: 700; cursor: pointer; letter-spacing: 1px; transition: all 0.2s;
+  }
+  .btn-end:hover { background: rgba(255,23,68,0.25); }
+  .timer-area {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 24px 20px; width: 100%;
+  }
+  .timer-ring-container { position: relative; width: 200px; height: 200px; margin-bottom: 24px; }
+  .timer-ring-container svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+  .ring-progress {
+    fill: none; stroke: var(--green); stroke-width: 8; stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear; filter: drop-shadow(0 0 6px rgba(0,230,118,0.5));
+  }
+  .timer-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+  .timer-minutes { font-family: 'Barlow Condensed', sans-serif; font-size: 52px; font-weight: 900; line-height: 1; }
+  .timer-label { font-size: 11px; font-weight: 600; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; }
+  .next-alarm-text { font-size: 13px; color: var(--text-dim); margin-bottom: 8px; }
+  .next-alarm-time { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 700; color: var(--green); margin-bottom: 32px; }
+  .stats-bar { display: flex; gap: 16px; margin-bottom: 24px; }
+  .stat-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 20px; text-align: center; min-width: 90px;
+  }
+  .stat-number { font-family: 'Barlow Condensed', sans-serif; font-size: 32px; font-weight: 800; color: var(--green); line-height: 1; }
+  .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  .btn-manual {
+    background: rgba(0,230,118,0.1); border: 1px solid rgba(0,230,118,0.3);
+    border-radius: 10px; padding: 12px 28px; color: var(--green);
+    font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700;
+    letter-spacing: 2px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-manual:hover { background: rgba(0,230,118,0.2); }
+
+  /* === ALARM SCREEN === */
+  #alarmScreen {
+    display: none; position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.95); flex-direction: column;
+    align-items: center; justify-content: center; padding: 20px;
+    animation: alarmIn 0.3s ease;
+  }
+  #alarmScreen.active { display: flex; }
+  @keyframes alarmIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+  .alarm-pulse {
+    position: absolute; inset: 0; background: rgba(255,214,0,0.03);
+    animation: alarmFlash 0.8s ease-in-out infinite; pointer-events: none;
+  }
+  @keyframes alarmFlash { 0%,100%{opacity:0} 50%{opacity:1} }
+  .alarm-icon { font-size: 56px; margin-bottom: 12px; animation: shake 0.5s ease-in-out infinite; }
+  @keyframes shake { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-8deg)} 75%{transform:rotate(8deg)} }
+  .alarm-title { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(36px,8vw,60px); font-weight: 900; color: var(--yellow); letter-spacing: 2px; text-align: center; margin-bottom: 4px; }
+  .alarm-sub { font-size: 14px; color: var(--text-dim); margin-bottom: 28px; text-align: center; }
+  .checklist-container { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .check-row {
+    background: var(--surface); border: 2px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer;
+    transition: all 0.2s; user-select: none;
+  }
+  .check-row:hover { border-color: var(--green); background: rgba(0,230,118,0.05); }
+  .check-row.checked { border-color: var(--green); background: rgba(0,230,118,0.1); }
+  .check-row.fail { border-color: var(--red); background: rgba(255,23,68,0.1); }
+  .check-circle {
+    width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; transition: all 0.2s;
+  }
+  .check-row.checked .check-circle { background: var(--green); border-color: var(--green); color: #000; }
+  .check-row.fail .check-circle { background: var(--red); border-color: var(--red); color: #fff; }
+  .check-text { flex: 1; font-size: 15px; font-weight: 500; }
+  .check-actions { display: flex; gap: 6px; }
+  .btn-ok, .btn-fail {
+    padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;
+    letter-spacing: 1px; cursor: pointer; border: none; transition: all 0.2s;
+  }
+  .btn-ok { background: rgba(0,230,118,0.2); color: var(--green); border: 1px solid rgba(0,230,118,0.4); }
+  .btn-ok:hover, .btn-ok.active { background: var(--green); color: #000; }
+  .btn-fail { background: rgba(255,23,68,0.15); color: var(--red); border: 1px solid rgba(255,23,68,0.3); }
+  .btn-fail:hover, .btn-fail.active { background: var(--red); color: #fff; }
+  .progress-bar-wrap {
+    width: 100%; max-width: 460px; height: 6px; background: var(--border);
+    border-radius: 3px; margin-bottom: 20px; overflow: hidden;
+  }
+  .progress-bar-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.4s ease; box-shadow: 0 0 8px rgba(0,230,118,0.5); }
+  .btn-confirm {
+    width: 100%; max-width: 460px; background: var(--green); border: none;
+    border-radius: 12px; padding: 16px; color: #000;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800;
+    letter-spacing: 2px; cursor: pointer; transition: all 0.2s; opacity: 0.4; pointer-events: none;
+  }
+  .btn-confirm.ready { opacity: 1; pointer-events: all; box-shadow: 0 0 30px rgba(0,230,118,0.4); }
+  .btn-confirm.ready:hover { transform: translateY(-1px); }
+
+  /* === SUMMARY SCREEN === */
+  #summaryScreen { background: var(--bg); }
+  .summary-title { font-family: 'Barlow Condensed', sans-serif; font-size: 48px; font-weight: 900; text-align: center; margin-bottom: 8px; }
+  .summary-sub { font-size: 14px; color: var(--text-dim); text-align: center; margin-bottom: 32px; }
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 360px; width: 100%; margin-bottom: 32px; }
+  .summary-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+  .summary-num { font-family: 'Barlow Condensed', sans-serif; font-size: 44px; font-weight: 900; line-height: 1; }
+  .summary-num.green { color: var(--green); }
+  .summary-num.red { color: var(--red); }
+  .summary-num.blue { color: var(--blue); }
+  .summary-lbl { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 6px; }
+  .btn-restart {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 32px; color: var(--text); font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-restart:hover { border-color: var(--green); color: var(--green); }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 20px; font-size: 13px; color: var(--text);
+    transition: transform 0.3s ease; z-index: 999; white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- START SCREEN -->
+<div id="startScreen" class="screen active">
+  <div class="start-badge">⚙ SISTEMA DE CALIDAD</div>
+  <h1 class="start-title">CONTROL<br><span>DE LÍNEA</span></h1>
+  <p class="start-sub">Alarma horaria con checklist de revisión para empaque</p>
+
+  <div class="setup-card">
+    <h3>⚡ Configuración del Turno</h3>
+    <div class="field-group">
+      <label>Línea de Producción</label>
+      <select id="lineSelect">
+        <option>Línea 1</option>
+        <option>Línea 2</option>
+        <option>Línea 3</option>
+        <option>Línea 4</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <label>Intervalo de Alarma</label>
+      <select id="intervalSelect">
+        <option value="60">Cada 60 minutos</option>
+        <option value="30">Cada 30 minutos</option>
+        <option value="45">Cada 45 minutos</option>
+        <option value="90">Cada 90 minutos</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="setup-card">
+    <h3>✅ Puntos de Revisión</h3>
+    <div class="checklist-editor" id="checklistEditor">
+      <div class="check-item-row"><input type="text" value="Fecha impresa en producto" /><button class="btn-remove" onclick="removeItem(this)">×</button></div>
+      <div class="check-item-row"><input type="text" value="Sello hermético (no escapa aire)" /><button class="btn-remove" onclick="removeItem(this)">×</button></div>
+      <div class="check-item-row"><input type="text" value="Peso dentro de especificación" /><button class="btn-remove" onclick="removeItem(this)">×</button></div>
+    </div>
+    <button class="btn-add-item" onclick="addItem()">+ AGREGAR PUNTO</button>
+  </div>
+
+  <div class="setup-card">
+    <h3>📊 Google Sheets</h3>
+    <div class="field-group">
+      <label>URL del Apps Script</label>
+      <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/..." />
+    </div>
+    <div class="field-group">
+      <label>Nombre de la Hoja</label>
+      <input type="text" id="sheetName" value="Checklist_Calidad" />
+    </div>
+    <div class="sheets-status" id="sheetsStatus"></div>
+  </div>
+
+  <button class="btn-start" onclick="startTurno()">▶ INICIAR TURNO</button>
+</div>
+
+<!-- RUN SCREEN -->
+<div id="runScreen" class="screen">
+  <div class="run-header">
+    <div class="run-header-left">
+      <div class="status-dot"></div>
+      <span class="run-title-text">TURNO ACTIVO</span>
+      <span class="run-line-badge" id="runLineBadge">Línea 1</span>
+    </div>
+    <div class="run-header-right">
+      <span class="clock-display" id="clockDisplay">00:00</span>
+      <button class="btn-end" onclick="endTurno()">■ FIN TURNO</button>
+    </div>
+  </div>
+  <div class="timer-area">
+    <div class="timer-ring-container">
+      <svg width="200" height="200" viewBox="0 0 200 200">
+        <circle class="ring-bg" cx="100" cy="100" r="88"/>
+        <circle class="ring-progress" id="ringProgress" cx="100" cy="100" r="88" stroke-dasharray="553" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-center">
+        <div class="timer-minutes" id="timerMinutes">60</div>
+        <div class="timer-label">MIN</div>
+      </div>
+    </div>
+    <div class="next-alarm-text">Próxima revisión a las</div>
+    <div class="next-alarm-time" id="nextAlarmTime">—</div>
+    <div class="stats-bar">
+      <div class="stat-box">
+        <div class="stat-number" id="statOK">0</div>
+        <div class="stat-label">✅ OK</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="statFail" style="color:var(--red)">0</div>
+        <div class="stat-label">⚠ FALLAS</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number" id="statChecks" style="color:var(--blue)">0</div>
+        <div class="stat-label">REVISIONES</div>
+      </div>
+    </div>
+    <button class="btn-manual" onclick="triggerAlarm()">🔔 REVISIÓN MANUAL</button>
+  </div>
+</div>
+
+<!-- ALARM SCREEN -->
+<div id="alarmScreen">
+  <div class="alarm-pulse"></div>
+  <div class="alarm-icon">🔔</div>
+  <div class="alarm-title">¡HORA DE REVISAR!</div>
+  <div class="alarm-sub" id="alarmTime">—</div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+  <div class="checklist-container" id="alarmChecklist"></div>
+  <button class="btn-confirm" id="btnConfirm" onclick="confirmRevision()">CONFIRMAR REVISIÓN ✓</button>
+</div>
+
+<!-- SUMMARY SCREEN -->
+<div id="summaryScreen" class="screen">
+  <div class="summary-title">RESUMEN<br>DE TURNO</div>
+  <div class="summary-sub" id="summaryLine">Línea 1</div>
+  <div class="summary-grid">
+    <div class="summary-stat"><div class="summary-num green" id="sumChecks">0</div><div class="summary-lbl">Revisiones</div></div>
+    <div class="summary-stat"><div class="summary-num red" id="sumFails">0</div><div class="summary-lbl">Fallas</div></div>
+    <div class="summary-stat" style="grid-column:span 2"><div class="summary-num blue" id="sumScore">100%</div><div class="summary-lbl">Puntuación de Calidad</div></div>
+  </div>
+  <button class="btn-restart" onclick="restart()">↺ NUEVO TURNO</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let config = { line:'Línea 1', intervalMin:60, items:[], scriptUrl:'', sheetName:'Checklist_Calidad' };
+let alarmTimer=null, clockTimer=null, nextAlarmAt=null;
+let totalChecks=0, totalFails=0, checkResults=[];
+let currentItemStates=[];
+let audioCtx=null;
+
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playAlarm() {
+  initAudio();
+  const pattern = [800,600,800,600,900];
+  let t = audioCtx.currentTime;
+  pattern.forEach((freq,i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = freq; osc.type = 'square';
+    gain.gain.setValueAtTime(0.3, t+i*0.18);
+    gain.gain.exponentialRampToValueAtTime(0.001, t+i*0.18+0.15);
+    osc.start(t+i*0.18); osc.stop(t+i*0.18+0.15);
+  });
+}
+
+function playSuccess() {
+  initAudio();
+  const notes = [523,659,784];
+  let t = audioCtx.currentTime;
+  notes.forEach((freq,i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = freq; osc.type = 'sine';
+    gain.gain.setValueAtTime(0.2, t+i*0.12);
+    gain.gain.exponentialRampToValueAtTime(0.001, t+i*0.12+0.25);
+    osc.start(t+i*0.12); osc.stop(t+i*0.12+0.25);
+  });
+}
+
+function addItem() {
+  const editor = document.getElementById('checklistEditor');
+  const row = document.createElement('div');
+  row.className = 'check-item-row';
+  row.innerHTML = `<input type="text" value="Nuevo punto de revisión" /><button class="btn-remove" onclick="removeItem(this)">×</button>`;
+  editor.appendChild(row);
+}
+
+function removeItem(btn) {
+  const rows = document.querySelectorAll('.check-item-row');
+  if (rows.length <= 1) { showToast('Debe haber al menos 1 punto', 'error'); return; }
+  btn.parentElement.remove();
+}
+
+function startTurno() {
+  initAudio();
+  config.line = document.getElementById('lineSelect').value;
+  config.intervalMin = parseInt(document.getElementById('intervalSelect').value);
+  config.scriptUrl = document.getElementById('scriptUrl').value.trim();
+  config.sheetName = document.getElementById('sheetName').value.trim();
+  const inputs = document.querySelectorAll('#checklistEditor input');
+  config.items = Array.from(inputs).map(i => i.value.trim()).filter(v => v);
+  if (!config.items.length) { showToast('Agrega al menos 1 punto', 'error'); return; }
+  totalChecks=0; totalFails=0; checkResults=[];
+  document.getElementById('runLineBadge').textContent = config.line;
+  updateStats();
+  showScreen('runScreen');
+  startClocks();
+  scheduleNextAlarm();
+}
+
+function startClocks() {
+  clockTimer = setInterval(() => {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('clockDisplay').textContent = `${h}:${m}`;
+    updateRing();
+  }, 1000);
+}
+
+function updateRing() {
+  if (!nextAlarmAt) return;
+  const total = config.intervalMin * 60 * 1000;
+  const remaining = Math.max(0, nextAlarmAt - Date.now());
+  const mins = Math.ceil(remaining / 60000);
+  const offset = 553 * (1 - remaining/total);
+  document.getElementById('ringProgress').style.strokeDashoffset = offset;
+  document.getElementById('timerMinutes').textContent = mins;
+}
+
+function scheduleNextAlarm() {
+  if (alarmTimer) clearTimeout(alarmTimer);
+  nextAlarmAt = Date.now() + config.intervalMin * 60 * 1000;
+  const t = new Date(nextAlarmAt);
+  document.getElementById('nextAlarmTime').textContent =
+    String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+  alarmTimer = setTimeout(triggerAlarm, config.intervalMin * 60 * 1000);
+}
+
+function triggerAlarm() {
+  playAlarm();
+  const now = new Date();
+  document.getElementById('alarmTime').textContent =
+    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ' — ' + config.line;
+  currentItemStates = config.items.map(() => 'none');
+  const container = document.getElementById('alarmChecklist');
+  container.innerHTML = '';
+  config.items.forEach((item,i) => {
+    const row = document.createElement('div');
+    row.className = 'check-row'; row.id = `cr_${i}`;
+    row.innerHTML = `
+      <div class="check-circle" id="cc_${i}">○</div>
+      <div class="check-text">${item}</div>
+      <div class="check-actions">
+        <button class="btn-ok" onclick="setItem(${i},'ok')">✓ OK</button>
+        <button class="btn-fail" onclick="setItem(${i},'fail')">✗ FALLA</button>
+      </div>`;
+    container.appendChild(row);
+  });
+  updateProgress();
+  document.getElementById('alarmScreen').classList.add('active');
+  document.getElementById('btnConfirm').classList.remove('ready');
+  setTimeout(() => {
+    if (document.getElementById('alarmScreen').classList.contains('active')) playAlarm();
+  }, 10000);
+}
+
+function setItem(idx, status) {
+  currentItemStates[idx] = status;
+  const row = document.getElementById(`cr_${idx}`);
+  const circle = document.getElementById(`cc_${idx}`);
+  row.className = 'check-row ' + status;
+  circle.textContent = status === 'ok' ? '✓' : '✗';
+  row.querySelector('.btn-ok').classList.toggle('active', status==='ok');
+  row.querySelector('.btn-fail').classList.toggle('active', status==='fail');
+  updateProgress();
+}
+
+function updateProgress() {
+  const answered = currentItemStates.filter(s => s !== 'none').length;
+  document.getElementById('progressFill').style.width = (answered/config.items.length*100) + '%';
+  document.getElementById('btnConfirm').classList.toggle('ready', answered === config.items.length);
+}
+
+function confirmRevision() {
+  const failCount = currentItemStates.filter(s => s==='fail').length;
+  totalChecks++; totalFails += failCount;
+  const now = new Date();
+  const record = {
+    time: String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),
+    line: config.line,
+    items: config.items.map((name,i) => ({ name, status: currentItemStates[i] })),
+    fails: failCount
+  };
+  checkResults.push(record);
+  playSuccess();
+  updateStats();
+  document.getElementById('alarmScreen').classList.remove('active');
+  scheduleNextAlarm();
+  if (config.scriptUrl) sendToSheets(record);
+  showToast(failCount===0 ? '✅ Revisión completada sin fallas' : `⚠ ${failCount} falla(s) registrada(s)`, failCount===0?'success':'error');
+}
+
+function updateStats() {
+  const cleanChecks = checkResults.filter(r => r.fails===0).length;
+  document.getElementById('statOK').textContent = cleanChecks;
+  document.getElementById('statFail').textContent = totalFails;
+  document.getElementById('statChecks').textContent = totalChecks;
+}
+
+function sendToSheets(record) {
+  if (!config.scriptUrl) return;
+  try {
+    const payload = {
+      action: 'logChecklist',
+      sheet: config.sheetName,
+      data: {
+        fecha: new Date().toLocaleDateString('es'),
+        hora: record.time,
+        linea: record.line,
+        ...Object.fromEntries(record.items.map(item => [item.name, item.status==='ok'?'✅ OK':'⚠ FALLA'])),
+        total_fallas: record.fails
+      }
+    };
+    const url = config.scriptUrl + '?payload=' + encodeURIComponent(JSON.stringify(payload));
+    new Image().src = url;
+    document.getElementById('sheetsStatus').textContent = '✓ Guardado en Google Sheets';
+    document.getElementById('sheetsStatus').className = 'sheets-status ok';
+  } catch(err) {
+    document.getElementById('sheetsStatus').className = 'sheets-status err';
+  }
+}
+
+function endTurno() {
+  if (!confirm('¿Terminar el turno?')) return;
+  clearTimeout(alarmTimer); clearInterval(clockTimer);
+  document.getElementById('summaryLine').textContent = config.line;
+  document.getElementById('sumChecks').textContent = totalChecks;
+  document.getElementById('sumFails').textContent = totalFails;
+  const total = totalChecks * config.items.length;
+  const score = total > 0 ? Math.round(((total-totalFails)/total)*100) : 100;
+  document.getElementById('sumScore').textContent = score + '%';
+  showScreen('summaryScreen');
+}
+
+function restart() { showScreen('startScreen'); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+</script>
+</body>
+</html>
